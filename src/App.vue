@@ -191,11 +191,11 @@ export default {
         }
       }, 3000);
       this.ticker = "";
-    },
+    }, 
     select(ticker){
       this.sel=ticker;
       this.graph = [];
-    },
+    }, 
     handleDelete(tickerToRemove) {
       this.tickers = this.tickers.filter(t => t !== tickerToRemove);
     },
