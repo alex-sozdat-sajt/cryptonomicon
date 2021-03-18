@@ -11,11 +11,12 @@
         <div class="flex">
           <div class="max-w-xs">
             <label for="wallet" class="block text-sm font-medium text-gray-700"
-              >Тикер {{ ticker }}</label
+              >Тикер {{ ticker.toUpperCase() }}</label
             >
             <div class="mt-1 relative rounded-md shadow-md">
               <input
                 v-model="ticker"
+                v-on:keyup="findInArr"
                 v-on:keydown.enter="add"
                 type="text"
                 name="wallet"
@@ -24,31 +25,39 @@
                 placeholder="Например DOGE"
               />
             </div>
+            <div>Нажатая клавиша {{ keyFromInp }}</div>
             <div
               class="flex bg-white shadow-md p-1 rounded-md shadow-md flex-wrap"
             >
               <span
+                @click="clicToCoin(findCoinInArr[0])"
                 class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
               >
-                BTC
+                {{ findCoinInArr[0] }}
               </span>
               <span
+                @click="clicToCoin(findCoinInArr[1])"
                 class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
               >
-                DOGE
+                {{ findCoinInArr[1] }}
               </span>
               <span
+                @click="clicToCoin(findCoinInArr[2])"
                 class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
               >
-                BCH
+                {{ findCoinInArr[2] }}
               </span>
               <span
+                @click="clicToCoin(findCoinInArr[3])"
                 class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
               >
-                CHD
+                {{ findCoinInArr[3] }}
               </span>
             </div>
-            <div class="text-sm text-red-600">Такой тикер уже добавлен</div>
+
+            <div v-if="exist" class="text-sm text-red-600">
+              Такой тикер уже добавлен
+            </div>
           </div>
         </div>
         <button
@@ -71,6 +80,20 @@
           </svg>
           Добавить
         </button>
+        <button
+          type="button"
+          class="my-4 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+          @click="addCoin"
+        >
+          Загрузить
+        </button>
+        <button
+          type="button"
+          class="my-4 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+          @click="coinInd"
+        >
+          Вывести по индексу
+        </button>
       </section>
       <template v-if="tickers.length">
         <hr class="w-full border-t border-gray-600 my-4" />
@@ -89,7 +112,7 @@
                 {{ t.name }}- USD
               </dt>
               <dd class="mt-1 text-3xl font-semibold text-gray-900">
-                {{t.price}}
+                {{ t.price }}
               </dd>
             </div>
             <div class="w-full border-t border-gray-200"></div>
@@ -121,11 +144,11 @@
         </h3>
         <div class="flex items-end border-gray-600 border-b border-l h-64">
           <div
-          v-for="(bar, idx) in normalizeGraph()"
-          :key="idx"
-          :style="{height:`${bar}%`}"
-           class="bg-purple-800 border w-10    "></div>
-          
+            v-for="(bar, idx) in normalizeGraph()"
+            :key="idx"
+            :style="{ height: `${bar}%` }"
+            class="bg-purple-800 border w-10    "
+          ></div>
         </div>
         <button
           @click="sel = null"
@@ -167,47 +190,116 @@ export default {
       ticker: "",
       tickers: [],
       sel: null,
-      graph: []
+      graph: [],
+      exist: false,
+      coinName: [],
+      coinName2: [],
+      keyFromInp: "цц",
+      findCoinInArr: []
     };
   },
+  created: function() {
+    // console.log("addCoin");
+    this.addCoin();
+  },
   methods: {
+    clicToCoin(s) {
+      this.ticker = s;
+      this.add();
+    },
+    async addCoin() {
+      const co = await fetch(
+        "https://min-api.cryptocompare.com/data/all/coinlist?summary=true"
+      );
+      const coinData = await co.json();
+      console.log("co", co);
+      console.log("coinData.Data", coinData.Data);
+
+      for (let key in coinData.Data) {
+        this.coinName.push(key);
+      }
+      console.log("coinName", this.coinName);
+    },
+    coinInd() {},
+
+    findInArr() {
+      this.exist = false;
+
+      let tickerToUpperCase = this.ticker.toUpperCase();
+      console.log("tickerToUpperCase " + tickerToUpperCase);
+
+      if (tickerToUpperCase.length == 1) {
+        console.log("tickerToUpperCase.length " + tickerToUpperCase.length);
+        this.coinName.forEach(item => {
+          if (item.split("")[0] == tickerToUpperCase) {
+            this.findCoinInArr.push(item);
+          }
+        });
+      } else if (tickerToUpperCase.length == 2) {
+        this.findCoinInArr = [];
+        this.coinName.forEach(item => {
+          if (item.split("")[0] + item.split("")[1] == tickerToUpperCase) {
+            console.log("tickerToUpperCase.length " + tickerToUpperCase.length);
+            console.log("++++++" + item.split("")[0] + item.split("")[1]);
+            this.findCoinInArr.push(item);
+          }
+        });
+      } else if (tickerToUpperCase.length == 3) {
+        this.findCoinInArr = [];
+        this.coinName.forEach(item => {
+          if (
+            item.split("")[0] + item.split("")[1] + item.split("")[2] ==
+            tickerToUpperCase
+          ) {
+            console.log("tickerToUpperCase.length " + tickerToUpperCase.length);
+            console.log("++++++" + item.split("")[0] + item.split("")[1]);
+            this.findCoinInArr.push(item);
+          }
+        });
+      }
+      console.log("findCoinInArr", this.findCoinInArr);
+    },
+
     add() {
       const currentTicker = {
         name: this.ticker,
         price: "-"
       };
-      this.tickers.push(currentTicker);
-      setInterval(async () => {
-        const f = await fetch(
-          `https://min-api.cryptocompare.com/data/price?fsym=${currentTicker.name}&tsyms=USD&api_key=7310e32e5cce03db8aa2a8f947ef99f69844cf38cc168835c16aff4964c17d12`
-        );
-        const data = await f.json();
-        //correntTicer.price = data.USD > 1 ? data.USD.toFixed(2) : data.USD.toPrecision(2);
-        console.log(data);
-        this.tickers.find(t => t.name === currentTicker.name).price =
-          data.USD > 1 ? data.USD.toFixed(2) : data.USD.toPrecision(2);
-        if(this.sel?.name === currentTicker.name){
-          this.graph.push(data.USD)
-        }
-      }, 3000);
-      this.ticker = "";
-    }, 
-    select(ticker){
-      this.sel=ticker;
+
+      let ind = this.tickers.findIndex(t => t.name === this.ticker);
+      if (ind !== -1) {
+        this.exist = true;
+      } else {
+        this.tickers.push(currentTicker);
+        setInterval(async () => {
+          const f = await fetch(
+            `https://min-api.cryptocompare.com/data/price?fsym=${currentTicker.name}&tsyms=USD&api_key=7310e32e5cce03db8aa2a8f947ef99f69844cf38cc168835c16aff4964c17d12`
+          );
+          const data = await f.json();
+
+          this.tickers.find(t => t.name === currentTicker.name).price =
+            data.USD > 1 ? data.USD.toFixed(2) : data.USD.toPrecision(2);
+          if (this.sel?.name === currentTicker.name) {
+            this.graph.push(data.USD);
+          }
+        }, 3000);
+        this.ticker = "";
+      }
+    },
+    select(ticker) {
+      this.sel = ticker;
       this.graph = [];
-    }, 
+    },
     handleDelete(tickerToRemove) {
       this.tickers = this.tickers.filter(t => t !== tickerToRemove);
     },
-    normalizeGraph(){
+    normalizeGraph() {
       const maxValue = Math.max(...this.graph);
       const minValue = Math.min(...this.graph);
       return this.graph.map(
-        price => 5+((price - minValue)*95/(maxValue - minValue))
-        )
+        price => 5 + ((price - minValue) * 95) / (maxValue - minValue)
+      );
     }
   }
 };
 </script>
-
-<style src="./app.css"></style>
